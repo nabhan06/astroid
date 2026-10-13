@@ -53,6 +53,46 @@ class TestTypingAlias:
         assert inferred.bases[0].name == "int"
 
     @pytest.mark.parametrize(
+        "second_arg",
+        [
+            "'foo'",  # str
+            "None",
+            "3.5",  # float
+            "b'x'",  # bytes
+        ],
+    )
+    def test_infer_typing_alias_non_int_second_argument(self, second_arg: str) -> None:
+        """A non-int second argument must not crash the subscriptability check."""
+        node = builder.extract_node(f"""
+            from typing import _alias
+            x = _alias(int, {second_arg})
+            """)
+        assert isinstance(node, nodes.Assign)
+        assert isinstance(node.value, nodes.Call)
+        # Should not raise TypeError from comparing the value with 0.
+        inferred = next(node.value.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+
+    @pytest.mark.parametrize(
+        "second_arg, subscriptable",
+        [
+            ("1", True),  # positive int -> subscriptable
+            ("-1", False),  # non-positive int -> not subscriptable
+        ],
+    )
+    def test_infer_typing_alias_int_second_argument(
+        self, second_arg: str, subscriptable: bool
+    ) -> None:
+        """A constant int count still drives the subscriptability check."""
+        node = builder.extract_node(f"""
+            from typing import _alias
+            x = _alias(int, {second_arg})
+            """)
+        inferred = next(node.value.infer())
+        assert isinstance(inferred, nodes.ClassDef)
+        assert ("__class_getitem__" in inferred.locals) == subscriptable
+
+    @pytest.mark.parametrize(
         "alias_args",
         [
             "",  # two missing arguments

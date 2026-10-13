@@ -1,0 +1,7 @@
+Fix an uncaught ``TypeError`` when inferring a ``typing`` ``_alias(...)`` call whose
+second argument is a non-int constant such as ``_alias(int, "foo")``. The
+subscriptability check compared the constant with ``0`` after only verifying it was a
+``Const``, so a ``str``, ``bytes`` or ``None`` value crashed inference. Such a value now
+takes the non-subscriptable branch instead.
+
+Closes #3389
