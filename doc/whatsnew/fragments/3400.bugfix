@@ -1,0 +1,7 @@
+Infer a functional ``collections.namedtuple`` / ``typing.NamedTuple`` call without
+crashing when a field name is an integer literal above the interpreter's integer
+string conversion limit, such as ``namedtuple("T", [0xfff...])``. Mapping ``str()``
+over the field names used to raise an uncaught ``ValueError``; such a value is not a
+valid field name, so inference now yields ``Uninferable``.
+
+Refs #3400

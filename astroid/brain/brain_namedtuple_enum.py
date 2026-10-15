@@ -141,7 +141,13 @@ def infer_func_form(
 
     if not enum:
         # namedtuple maps sys.intern(str()) over over field_names
-        attributes = [str(attr) for attr in attributes]
+        try:
+            attributes = [str(attr) for attr in attributes]
+        except ValueError as exc:
+            # ``str()`` of an int above the interpreter's integer string
+            # conversion limit raises ``ValueError``; such a value is not a
+            # valid field name, so fall back instead of crashing inference.
+            raise UseInferenceDefault from exc
         # XXX this should succeed *unless* __str__/__repr__ is incorrect or throws
         # in which case we should not have inferred these values and raised earlier
     if any(not isinstance(attr, str) for attr in attributes):

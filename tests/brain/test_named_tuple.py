@@ -323,3 +323,16 @@ class NamedTupleTest(unittest.TestCase):
         assert isinstance(good_node_two_inferred, nodes.ClassDef)
         bad_node_inferred = next(bad_node.infer())
         assert bad_node_inferred == util.Uninferable
+
+    def test_namedtuple_oversized_int_field_name_no_crash(self) -> None:
+        """A field name given as an int above the integer string conversion limit.
+
+        ``infer_func_form`` maps ``str()`` over the field names (as CPython does),
+        which used to raise an uncaught ``ValueError`` for such a value.
+        """
+        big_int = "0x" + "f" * 4000
+        node = builder.extract_node(f"""
+        from collections import namedtuple
+        namedtuple("T", [{big_int}])  #@
+        """)
+        assert next(node.infer()) is util.Uninferable
